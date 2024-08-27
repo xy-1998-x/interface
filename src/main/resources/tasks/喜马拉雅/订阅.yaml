@@ -1,0 +1,11 @@
+---
+-
+  app_name: com.ximalaya.ting.android
+  activity_name: com.ximalaya.ting.android.host.activity.MainActivity
+  element_info: //android.widget.RadioButton[@resource-id="com.ximalaya.ting.android:id/tab_finding"]
+  find_type: XPATH
+  operate_type: CLICK
+-
+  element_info: //android.widget.Button[@text="关注"]
+  find_type: XPATH
+  operate_type: CLICK
