@@ -4,6 +4,7 @@ import com.appium.example.bean.AllTask;
 import com.appium.example.bean.Step;
 import com.appium.example.bean.Task;
 import com.appium.example.constant.DriverConstants;
+import com.appium.example.screen.BaseScreen;
 import com.appium.example.util.LogUtils;
 import com.appium.example.util.driver.MobileDriverFactory;
 import com.appium.example.util.driver.MobileDriverHolder;
@@ -22,16 +23,20 @@ import org.openqa.selenium.*;
 import org.openqa.selenium.interactions.PointerInput;
 import org.openqa.selenium.interactions.Sequence;
 import org.openqa.selenium.remote.RemoteWebElement;
+import org.yaml.snakeyaml.Yaml;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.file.Path;
 import java.time.Duration;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class AppiumCallImpl implements ICall {
 
@@ -42,66 +47,6 @@ public class AppiumCallImpl implements ICall {
     private static List<String> appList;
     private static boolean isExecuted = false; //通过标志位来使得once方法只执行一次
 
-    public static void main(String[] args) throws MalformedURLException, URISyntaxException {
-//        execCmdByAppium("am start", List.of(" -n com.test.tools/com.test.tools.MainActivity"));
-        swipe();
-    }
-
-    private static void swipe() {
-        AppiumDriver androidDriver = Main.getDriver();
-
-//        boolean canScrollMore = (Boolean) ((JavascriptExecutor) androidDriver).executeScript("mobile: scrollGesture", ImmutableMap.of(
-//                "left", 100, "top", 100, "width", 200, "height", 200,
-//                "direction", "down",
-//                "percent", 1.0
-//        ));
-//        WebElement element = androidDriver.findElement(By.xpath("//android.widget.ImageView[@resource-id=\"com.sup.android.superb:id/aue\"]"));
-//        ((JavascriptExecutor) androidDriver).executeScript("mobile: dragGesture", ImmutableMap.of(
-//                "elementId", ((RemoteWebElement) element).getId(),
-//                "endX", 100,
-//                "endY", 100
-//        ));
-
-
-        //
-//        int startX = androidDriver.manage().window().getSize().getWidth() / 2;
-//        int startY = androidDriver.manage().window().getSize().getHeight() / 2;
-//        int endY = (int) (androidDriver.manage().window().getSize().getHeight() * 0.2);
-////
-//        PointerInput finger = new PointerInput(PointerInput.Kind.PEN, "finger");
-//        Sequence scroll = new Sequence(finger, 0);
-//
-//        scroll.addAction(finger.createPointerMove(Duration.ZERO, PointerInput.Origin.viewport(), startX, startY));
-//        scroll.addAction(finger.createPointerDown(PointerInput.MouseButton.LEFT.asArg()));
-//        scroll.addAction(finger.createPointerMove(Duration.ofMillis(6000), PointerInput.Origin.viewport(), startX, endY));
-//        scroll.addAction(finger.createPointerUp(PointerInput.MouseButton.LEFT.asArg()));
-//        androidDriver.perform(List.of(scroll));
-
-
-        //滑动
-        WebElement element = androidDriver.findElement(By.xpath("//android.widget.RelativeLayout[@resource-id=\"com.sup.android.superb:id/att\"]"));
-        Point sourceLocation = element.getLocation();
-        Dimension sourceSize = element.getSize();
-        int centerX = sourceLocation.getX() + sourceSize.getWidth() / 2;
-        int centerY = sourceLocation.getY() + sourceSize.getHeight() / 2;
-
-        PointerInput finger = new PointerInput(PointerInput.Kind.PEN, "finger");
-        Sequence dragNDrop = new Sequence(finger, 1);
-        dragNDrop.addAction(finger.createPointerMove(Duration.ofMillis(0), PointerInput.Origin.viewport(), centerX, centerY));
-        dragNDrop.addAction(finger.createPointerDown(PointerInput.MouseButton.LEFT.asArg()));
-        dragNDrop.addAction(finger.createPointerMove(Duration.ofMillis(700), PointerInput.Origin.viewport(), centerX, centerY - 5050));
-        dragNDrop.addAction(finger.createPointerUp(PointerInput.MouseButton.LEFT.asArg()));
-        androidDriver.perform(List.of(dragNDrop));
-
-        //点击
-//        PointerInput finger = new PointerInput(PointerInput.Kind.PEN, "finger");
-//        Sequence tap = new Sequence(finger, 1);
-//        tap.addAction(finger.createPointerMove(Duration.ofMillis(0), PointerInput.Origin.viewport(), centerX, centerY));
-//        tap.addAction(finger.createPointerDown(PointerInput.MouseButton.LEFT.asArg()));
-//        tap.addAction(finger.createPointerUp(PointerInput.MouseButton.LEFT.asArg()));
-//        androidDriver.perform(List.of(tap));
-
-    }
 
     public static String execCmdByAppium(String cmd, List<String> args) throws URISyntaxException, MalformedURLException {
         MobileDriverService driverService = new MobileDriverFactory().getDriverService();
@@ -128,6 +73,7 @@ public class AppiumCallImpl implements ICall {
         return cmdRes;
     }
 
+
     private void once(ControlInfo controlInfo) {
         if (!isExecuted) {
             try {
@@ -143,58 +89,84 @@ public class AppiumCallImpl implements ICall {
     @Override
     public void start(ControlInfo controlInfo, IControlCallback iControlCallback) {
 
+        Path taskpath = Path.of("C:\\Users\\86158\\Desktop\\test\\测试.yaml"); //传入的需要被解析的yaml文件路径
+        String yourpath = "C:\\Users\\86158\\Desktop\\"; //要保存截图的位置
         once(controlInfo);//用一个标志位 使其只执行一次 第一次!FALSE 执行一次后都是！Ture 所以不会在执行
 
+        /////解析yaml文件中的内容
+        Step steplist = new Step();
+        try {
+            Yaml yaml = new Yaml();
+            InputStream inputStream = new FileInputStream(taskpath.toFile());
+            ArrayList<HashMap<String, String>> arrayList = yaml.loadAs(inputStream, ArrayList.class);
+            arrayList.forEach(ele -> {
+
+                if (ele.get("app_name") != null) {
+                    steplist.setAppName(ele.get("app_name"));
+                }
+
+                //解析yaml文件并保存为对应的字符串数组
+                if (ele.get("taskslist") != null) {
+                    steplist.setTaskslist(ele.get("taskslist"));
+                }
+            });
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+        String appstr = steplist.getAppName();  //从目标yaml文件中解析出来的appname
+        String taskstr = steplist.getTaskslist(); //得到解析之后的任务队列
+        String[] parts = taskstr.split(","); //将不同的任务队列通过,分隔开
+
         appList.forEach(app -> {
-            if (app.equals(controlInfo.getAppName())) {
-                List<Task> taskByApp = allTask.getTask(app);
-                if (!taskByApp.isEmpty()) {
-                    MobileDriverService mobileDriverService = null;
-                    AndroidDriver androidDriver = null;
-                    String packageName = "";
+            if (app.equals(appstr)) {
+
+                //不同的任务队列tasklist进行for循环
+                for (int i = 0; i < parts.length; i++) {
+                    List<Task> taskByApp = allTask.getTask(app);
+                    MobileDriverService mobileDriverService = Main.beforeExec(taskByApp.get(0).getSteps().get(0).getAppName(), taskByApp.get(0).getSteps().get(0).getActivityName(), controlInfo.getDeviceName());
+
+                    String part = parts[i];
+                    String[] partlist = part.split("\\+");
+                    //把他变成一个链表  .map操作后的 Stream（其中的字符串都加上了.yaml后缀）收集到一个新的List<String>中。
+                    List<String> newPartListAsList = Arrays.stream(partlist)
+                            .map(str -> str + ".yaml")
+                            .collect(Collectors.toList());
+
+                    //这个 for 循环是轮询执行解析出来的listtask中的task
+                    for (int j = 0; j < newPartListAsList.size(); j++) {
+                        //不同的去和tasks比
+                        for (int k = 0; k < taskByApp.size(); k++) {
+                            Task task = taskByApp.get(k);
+
+                            //将在tasklist中取得的task与解析的进行比较
+                            if (task.getTaskName().equals(newPartListAsList.get(j))) {
+                                try {
+                                    Main.execTask(task); //执行任务不管如何都会截图
+                                } finally {
+                                    BaseScreen baseScreen = new BaseScreen(MobileDriverHolder.getDriver());
+                                    try {
+
+                                        baseScreen.screenshot(yourpath, task.getAppName(), task.getTaskName());
+
+                                    } catch (IOException e) {
+                                        throw new RuntimeException(e);
+                                    }
+                                }
+                                try {
+                                    Thread.sleep(3000);
+                                } catch (InterruptedException e) {
+                                    throw new RuntimeException(e);
+                                }
+                            }//if的
+
+                        } // 内嵌比较的for
+                    }   //for的
+
                     try {
-                        Task task = taskByApp.get(0);  // 获取第一个任务
-                        Step step = task.getSteps().get(0);
-
-//                        UiAutomator2Options options = new UiAutomator2Options()
-//                                .setUdid(controlInfo.getDeviceName())   //设置了设备的唯一标识符
-//                                .setAppPackage(step.getAppName())  //应用的包名
-//                                .setAppActivity(step.getActivityName())    //应用的活动
-//                                .setNoReset(Boolean.parseBoolean(DriverConstants.ANDROID_NO_RESET))
-//                                .setFullReset(Boolean.parseBoolean(DriverConstants.ANDROID_FULL_RESET))
-//                                .autoGrantPermissions();    //  权限
-//                        options.setCapability("appium:forceAppLaunch", true);
-//                        options.setCapability("sessionOverride", true);
-//
-//                        MobileDriverService driverService = new MobileDriverFactory().getDriverService();
-//                        AppiumDriverLocalService appiumService = driverService.startAppiumService();
-//                        androidDriver = new AndroidDriver(appiumService.getUrl(), options);
-//                        androidDriver.manage().timeouts().implicitlyWait(DriverConstants.APPIUM_DRIVER_TIMEOUT);
-//                        packageName = step.getAppName();
-//                        MobileDriverHolder.setDriver(androidDriver);
-
-                        mobileDriverService = Main.beforeExec(step.getAppName(), step.getActivityName(), controlInfo.getDeviceName());
-                        Main.execTask(task);
-                        taskByApp.remove(task);  // 删除已执行的任务
-                    } catch (IndexOutOfBoundsException e) {
-                        //   throw new RuntimeException("获取任务列表中的第一个任务时出错，任务列表可能为空", e);
-                        //logger.info("获取任务列表中的第一个任务时出错，任务列表可能为空");
-                    } catch (NullPointerException e) {
-                        //  throw new RuntimeException("获取任务步骤或执行相关操作时出现空指针异常", e);
-                        //logger.info("获取任务步骤或执行相关操作时出现空指针异常");
-                    } catch (Exception e) {
-                        //  throw new RuntimeException("执行任务过程中出现未知异常", e);
-                        //logger.info("执行任务过程中出现未知异常");
+                        Main.afterExec(mobileDriverService);
                     } finally {
-//                        androidDriver.terminateApp(packageName);
-//                        androidDriver.quit();
-
-                        if (mobileDriverService != null) {
-                            Main.afterExec(mobileDriverService);
-                        }
-
                         CallbackInfo callbackInfo;
-                        if (!taskByApp.isEmpty()) {
+                        if (i != parts.length - 1) {
                             callbackInfo = new CallbackInfo.Builder().appName(controlInfo.getAppName()).nextApp(false).build();
                         } else {
                             //logger.info("{}任务执行完毕", controlInfo.getAppName());  //打印出这个任务至完毕
@@ -202,8 +174,15 @@ public class AppiumCallImpl implements ICall {
                         }
                         iControlCallback.doCallback(callbackInfo);
                     }
-                }
-            }
+
+                }  //第一个for
+
+            }//if (app.equals(appstr)){
         });
+
     }
+
+
 }
+
+

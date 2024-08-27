@@ -1,12 +1,15 @@
 package com.appium.example.screen;
 
+import com.google.common.collect.ImmutableMap;
 import io.appium.java_client.AppiumBy;
-import org.openqa.selenium.By;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
+import org.apache.commons.io.FileUtils;
+import org.openqa.selenium.*;
+import org.openqa.selenium.remote.RemoteWebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
+import java.io.File;
+import java.io.IOException;
 import java.time.Duration;
 
 import static com.appium.example.constant.CommonConstants.MOBILE_PLATFORM_NAME;
@@ -52,16 +55,6 @@ public class BaseScreen
     }
 
 
-    //先等待元素可见，然后点击指定的元素
-    //这个方法提供了一种统一的方式来执行元素的点击操作，并确保在点击之前元素是可见的，增加了操作的可靠性和稳定性。
-/*    public void tap(By by)
-    {
-        waitUntilElementVisible(by);//调用函数等待可见 直接就是等待显示的函数方法
-        driver.findElement(by).click();//先找到元素 再点击
-        //driver是WebDriver类型 而WebDriver是一个远程控制接口，允许自省和控制用户代理
-        //WebDriver有findElement(by)这个方法  而findElement(by)的返回值WebElement通过click这个方法操作
-    } */
-
     public boolean tap(By by) {
         waitUntilElementVisible(by);
         try {
@@ -73,18 +66,12 @@ public class BaseScreen
     }
 
 
-    //滚动到指定文本的元素并点击。
-    //其功能是先滚动到指定文本的元素位置，然后对该元素执行点击操作。 传入的参数elementText
     public void scrollAndTap(String elementText)
     {
         scrollToElement(elementText).click();  //首先是调用不同的平台 使其元素可见 然后点击
-        //中间的.就是对 scrollToElement(elementText)返回对象的click方法进行调用
-        //返回的是WebElement element; WebElement类中的方法就包括click()；
             }
 
 
-    //传入的参数为by 对象来定位页面中的特定元素。By 通常是一种用于描述元素定位方式的对象，比如通过 ID、类名、标签名等属性来找到元素
-    //等待元素可见，然后向指定元素输入文本。
     public boolean inputText(By by, String text)
     {
         waitUntilElementVisible(by);    //首先是调用不同的平台 使其元素可见
@@ -96,11 +83,112 @@ public class BaseScreen
         }
     }
 
-    //导入执行函数
-    //滚动到指定文本的元素并输入文本。
     public void scrollAndInputText(String elementText, String text)
     {
         scrollToElement(elementText).sendKeys(text);//这个函数直接在使其可见的基础上 发送文本
+    }
+
+
+    public void doubleclick(By by){
+        waitUntilElementVisible(by);
+        RemoteWebElement element = (RemoteWebElement) driver.findElement(by); //通过这个定位到的元素来get他的id
+//        RemoteWebElement element = (RemoteWebElement) driver.findElement(By.xpath("//android.widget.FrameLayout[@resource-id=\"com.sup.android.superb:id/action_bar_root\"]/android.widget.FrameLayout"));
+        ((JavascriptExecutor) driver).executeScript("mobile: doubleClickGesture", ImmutableMap.of(
+                "elementId", element.getId()
+        ));
+    }
+
+    //上滑
+    public void scrolldown(String n) throws InterruptedException {
+//        waitUntilElementVisible(by);
+        long startTime = System.currentTimeMillis();
+
+        for(int i = 0; i <= Integer.parseInt(n); i++)
+//        while ((System.currentTimeMillis() - startTime) < 10000)
+        {
+            Dimension size = driver.manage().window().getSize();
+            int X = size.width / 2;
+            int Y = (int) (size.height * 0.2);
+            ((JavascriptExecutor) driver).executeScript("mobile: swipeGesture", ImmutableMap.of(
+                    "left", 10, "top", 10, "width", X, "height", Y,
+                    "direction", "up",
+                    "percent", 0.75
+            ));
+
+            Thread.sleep(2000);
+        }
+    }
+
+    //右滑
+    public void scrollright(String n) throws InterruptedException {
+//        waitUntilElementVisible(by);
+        long startTime = System.currentTimeMillis();
+
+        for(int i = 0; i <= Integer.parseInt(n); i++)
+//        while ((System.currentTimeMillis() - startTime) < 10000)
+        {
+            Dimension size = driver.manage().window().getSize();
+            int X = size.width/2 ;
+            int Y = (int) (size.height * 0.2);
+            ((JavascriptExecutor) driver).executeScript("mobile: swipeGesture", ImmutableMap.of(
+                    "left", 10, "top", 10, "width", X, "height", Y,
+                    "direction", "left",
+                    "percent", 0.75
+            ));
+
+            Thread.sleep(2000);
+        }
+    }
+
+    //找元素/////////////
+    public void findtext(String targetText) throws InterruptedException {
+
+        if(  driver.findElement(By.xpath("//*[@text='"+targetText+"']") )== null)
+        {
+            Dimension size = driver.manage().window().getSize();
+            int X = size.width/2 ;
+            int Y = (int) (size.height * 0.2);
+            ((JavascriptExecutor) driver).executeScript("mobile: swipeGesture", ImmutableMap.of(
+                    "left", 10, "top", 10, "width", X, "height", Y,
+                    "direction", "left",
+                    "percent", 0.75
+            ));
+
+            Thread.sleep(2000);
+        }
+        else{
+            Thread.sleep(5000);
+        }
+
+    }
+
+    public void screenshot(String yourpath,String appname,String taskname) throws IOException {
+        File screenshot = ((TakesScreenshot) driver).getScreenshotAs(OutputType.FILE);
+
+        String path = yourpath;
+        String folderName = appname;
+//        String path = "C:\\Users\\86158\\Desktop\\";
+//        String folderName = "pipixia";
+
+        File folder = new File(path + folderName);
+        try {
+            if (!folder.exists()) {
+                boolean created = folder.mkdirs();  //创建以该路劲名命名的目录 文件夹
+                if (created) {
+                    System.out.println("文件夹创建成功：" + folder.getAbsolutePath());
+                } else {
+                    System.out.println("文件夹创建失败。");
+                }
+            } else {
+                System.out.println("文件夹已存在：" + folder.getAbsolutePath());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        File destinationFile = new File(folder, taskname+".png");
+        FileUtils.copyFile(screenshot, destinationFile);
+
     }
 
 

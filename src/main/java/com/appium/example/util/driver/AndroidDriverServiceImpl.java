@@ -27,6 +27,7 @@ public class AndroidDriverServiceImpl implements MobileDriverService {
                 .setNoReset(Boolean.parseBoolean(DriverConstants.ANDROID_NO_RESET))
                 .setFullReset(Boolean.parseBoolean(DriverConstants.ANDROID_FULL_RESET))
                 .autoGrantPermissions();    //  权限
+        //
         options.setCapability("appium:forceAppLaunch", true);
 
         androidDriver = new AndroidDriver(appiumService.getUrl(), options);

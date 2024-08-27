@@ -254,6 +254,8 @@ public class Main {
             // 根据步骤的操作类型执行相应操作
             switch (step.getOperateType())//step对象的行为getOperateType()会返回OperateType这个自定义的枚举
             {
+                case SCROLLTOTEXT -> baseScreen.scrollToElement("");
+                case DOUBLECLICK -> baseScreen.doubleclick(elementInfo);
                 case CLICK -> {
                     boolean success = baseScreen.tap(elementInfo);
                     if (success) {
@@ -270,9 +272,21 @@ public class Main {
                     }
                     //logger.info("执行输入操作失败");
                 }
-                //baseScreen是BaseScreen类型 对该类调用tap方法（等待元素可见，点击）
+                case SCROLLDOWN -> {
+                    try {
+                        baseScreen.scrolldown(step.getNumsinfo());
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+                case SCROLLRIGHT -> {
+                    try {
+                        baseScreen.scrollright(step.getNumsinfo());
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
 
-                //default -> System.out.println("请检查操作类型，当前操作类型包括 '点击/文本输入'");
                 default -> {
                     //logger.error("请检查操作类型，当前操作类型包括 '点击/文本输入.");
                 }

@@ -12,5 +12,7 @@ public class Step {
     private FindType findType;
     private OperateType operateType;
     private String inputText;
+    private String numsinfo;
+    private String taskslist;
     private int index;
 }

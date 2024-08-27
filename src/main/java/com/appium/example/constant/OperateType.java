@@ -3,8 +3,12 @@ package com.appium.example.constant;
 //在枚举中添加进来自己需要的函数
 public enum OperateType {
     CLICK("click"),
-    INPUT("input");
-
+    INPUT("input"),
+    SCROLLDOWN("scrolldown"),
+    SCROLLRIGHT("scrollright"),
+    SCROLLTOTEXT("scrolltotext"),
+    DOUBLECLICK("doubleclick"),
+    FIND("find");
     //定义一下c操作
 
     private String name;    // 声明了一个私有字符串类型的成员变量 name ，用于存储每个枚举值对应的特定名称。
