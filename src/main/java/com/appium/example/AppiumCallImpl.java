@@ -89,18 +89,20 @@ public class AppiumCallImpl implements ICall {
     @Override
     public void start(ControlInfo controlInfo, IControlCallback iControlCallback) {
 
+        int index = 3;
+
         Path taskpath = Path.of("C:\\Users\\86158\\Desktop\\test\\测试.yaml"); //传入的需要被解析的yaml文件路径
         String yourpath = "C:\\Users\\86158\\Desktop\\"; //要保存截图的位置
         once(controlInfo);//用一个标志位 使其只执行一次 第一次!FALSE 执行一次后都是！Ture 所以不会在执行
 
+        Task taskyaml = new Task();
         /////解析yaml文件中的内容
-        Step steplist = new Step();
         try {
             Yaml yaml = new Yaml();
             InputStream inputStream = new FileInputStream(taskpath.toFile());
             ArrayList<HashMap<String, String>> arrayList = yaml.loadAs(inputStream, ArrayList.class);
             arrayList.forEach(ele -> {
-
+                Step steplist = new Step();
                 if (ele.get("app_name") != null) {
                     steplist.setAppName(ele.get("app_name"));
                 }
@@ -109,12 +111,15 @@ public class AppiumCallImpl implements ICall {
                 if (ele.get("taskslist") != null) {
                     steplist.setTaskslist(ele.get("taskslist"));
                 }
+                taskyaml.setSteps(steplist);
             });
         } catch (FileNotFoundException e) {
             throw new RuntimeException(e);
         }
-        String appstr = steplist.getAppName();  //从目标yaml文件中解析出来的appname
-        String taskstr = steplist.getTaskslist(); //得到解析之后的任务队列
+        Step temp =  taskyaml.getSteps().get(index);
+
+        String appstr = temp.getAppName();
+        String taskstr = temp.getTaskslist();
         String[] parts = taskstr.split(","); //将不同的任务队列通过,分隔开
 
         appList.forEach(app -> {
